@@ -1,0 +1,20 @@
+<% if prize %>
+  <div class="prize">
+    <div class="prize__icon">🎁</div>
+    <div>
+      <div class="prize__label"><%= month.strftime("%B") %> prize<%= " · won by #{leader.user.name}" if leader && !current %><%= " · #{leader.user.name} is leading" if leader && current %></div>
+      <div class="prize__text"><%= prize.description %></div>
+    </div>
+  </div>
+<% else %>
+  <div class="prize prize--empty">
+    <div class="prize__icon">🎁</div>
+    <div>
+      <div class="prize__label"><%= month.strftime("%B") %> prize</div>
+      <div class="prize__text">
+        No prize set<%= " yet" if current %>.
+        <% if admin && current %><%= link_to "Set this month's prize", edit_group_path(group) %><% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

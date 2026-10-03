@@ -1,0 +1,4 @@
+<div class="invite" data-controller="clipboard">
+  <input type="text" readonly value="<%= invitation_url(group.invite_code) %>" data-clipboard-target="source" aria-label="Invite link">
+  <button type="button" class="btn" data-action="clipboard#copy" data-clipboard-target="button">Copy</button>
+</div>

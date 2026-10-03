@@ -1,0 +1,26 @@
+<% content_for :title, "Puzzle Cup · Daily puzzle leaderboards for your crew" %>
+<section class="hero">
+  <h1>Your family's daily puzzle cup 🏆</h1>
+  <p>Track Wordle, Waffle, Quordle, Connections and One Word Search with your family or coworkers. Paste your results, climb the monthly leaderboard and win the prize.</p>
+  <div class="row" style="justify-content:center">
+    <%= link_to "Create an account", new_registration_path, class: "btn btn--primary" %>
+    <%= link_to "Sign in", new_session_path, class: "btn" %>
+  </div>
+</section>
+
+<div class="grid grid--2" style="margin-top:2rem">
+  <div class="card">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>Create a group and send the invite link to your people.</li>
+      <li>The admin sets this month's prize. Coffee? Dinner? Bragging rights?</li>
+      <li>Play your puzzles, tap <strong>Share</strong>, and paste the text here. We read the score for you.</li>
+      <li>Points add up all month. The leader at the end of the month takes the prize.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>Scoring</h2>
+    <p class="muted small">Every game is worth up to <%= Game::MAX_POINTS %> points a day, so all five count equally.</p>
+    <%= render "shared/scoring" %>
+  </div>
+</div>

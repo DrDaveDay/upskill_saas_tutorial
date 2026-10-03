@@ -1,0 +1,12 @@
+<% content_for :title, "New group · Puzzle Cup" %>
+<div class="form-narrow">
+  <h1>Start a group</h1>
+  <p class="muted">You'll be the admin: you set the monthly prize and manage members.</p>
+  <div class="card">
+    <%= render "shared/errors", record: @group %>
+    <%= form_with model: @group do |f| %>
+      <div class="field"><%= f.label :name, "Group name" %><%= f.text_field :name, required: true, autofocus: true, maxlength: 60, placeholder: "The Smith Family, 3rd Floor Puzzlers…" %></div>
+      <%= f.submit "Create group", class: "btn btn--primary btn--block" %>
+    <% end %>
+  </div>
+</div>

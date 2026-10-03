@@ -1,0 +1,62 @@
+<% content_for :title, "Admin · #{@group.name}" %>
+<div class="spread" style="margin-bottom:1rem">
+  <h1>⚙️ <%= @group.name %> admin</h1>
+  <%= link_to "← Leaderboard", group_path(@group), class: "btn btn--sm" %>
+</div>
+
+<div class="card">
+  <h2>🎁 Monthly prize</h2>
+  <p class="muted small">Shown at the top of the leaderboard. Whoever has the most points at the end of the month wins it.</p>
+  <% [ @this_month, @next_month ].each do |month| %>
+    <% prize = @group.prize_for(month) %>
+    <%= form_with model: prize || Prize.new, scope: :prize, url: group_prize_path(@group), method: :patch do |f| %>
+      <%= f.hidden_field :month, value: month.iso8601 %>
+      <div class="field field--inline">
+        <div>
+          <%= f.label :description, "#{month.strftime("%B %Y")}#{" (this month)" if month == @this_month}", for: "prize_#{month.strftime("%Y_%m")}" %>
+          <%= f.text_field :description, id: "prize_#{month.strftime("%Y_%m")}", maxlength: 200, placeholder: "e.g. Loser buys the winner lunch" %>
+        </div>
+        <div style="flex:0 0 auto"><%= f.submit "Save", class: "btn btn--primary" %></div>
+      </div>
+    <% end %>
+  <% end %>
+</div>
+
+<div class="card">
+  <h2>Invite link</h2>
+  <%= render "invite_link", group: @group %>
+  <%= button_to "Create a new link (old link stops working)", regenerate_invite_group_path(@group), class: "linklike small", form: { style: "margin-top:.6rem", data: { turbo_confirm: "The current invite link will stop working. Continue?" } } %>
+</div>
+
+<div class="card">
+  <h2>Members</h2>
+  <div class="members">
+    <% @memberships.each do |membership| %>
+      <div class="member">
+        <div class="who">
+          <span class="avatar"><%= membership.user.initials %></span>
+          <div>
+            <div><%= membership.user.name %> <span class="chip"><%= membership.admin? ? "Admin" : "Member" %></span></div>
+            <div class="small muted"><%= membership.user.email_address %></div>
+          </div>
+        </div>
+        <div class="row">
+          <%= button_to membership.admin? ? "Remove admin" : "Make admin", group_membership_path(@group, membership), method: :patch, params: { membership: { role: membership.admin? ? "member" : "admin" } }, class: "btn btn--sm" %>
+          <% unless membership.user == current_user %>
+            <%= button_to "Remove", group_membership_path(@group, membership), method: :delete, class: "btn btn--sm btn--danger", form: { data: { turbo_confirm: "Remove #{membership.user.name} from the group?" } } %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Group name</h2>
+  <%= form_with model: @group do |f| %>
+    <div class="field field--inline">
+      <div><%= f.text_field :name, required: true, maxlength: 60, aria: { label: "Group name" } %></div>
+      <div style="flex:0 0 auto"><%= f.submit "Rename", class: "btn" %></div>
+    </div>
+  <% end %>
+</div>

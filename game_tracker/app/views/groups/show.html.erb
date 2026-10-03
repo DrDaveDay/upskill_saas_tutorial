@@ -1,0 +1,103 @@
+<% content_for :title, "#{@group.name} · Puzzle Cup" %>
+<div class="spread" style="margin-bottom:1rem">
+  <h1><%= @group.name %></h1>
+  <div class="row">
+    <% if @admin %><%= link_to "⚙️ Admin", edit_group_path(@group), class: "btn btn--sm" %><% end %>
+    <%= link_to "Invite people", "#invite", class: "btn btn--sm" %>
+  </div>
+</div>
+
+<%= render "prize_banner", prize: @prize, month: @month, leader: @leaderboard.leader, current: @current_month, admin: @admin, group: @group %>
+
+<div class="card">
+  <div class="card__head">
+    <h2><%= @current_month ? "#{@month.strftime("%B")} leaderboard" : "#{@month.strftime("%B %Y")} final standings" %></h2>
+    <div class="month-nav small">
+      <%= link_to "‹", group_path(@group, month: @month.prev_month.strftime("%Y-%m")), aria: { label: "Previous month" } %>
+      <span><%= @month.strftime("%b %Y") %></span>
+      <% unless @current_month %>
+        <%= link_to "›", group_path(@group, month: @month.next_month.strftime("%Y-%m")), aria: { label: "Next month" } %>
+      <% end %>
+    </div>
+  </div>
+  <div class="board-wrap">
+    <table class="board">
+      <thead>
+        <tr><th class="rank">#</th><th>Player</th><th class="num hide-sm">Games</th><th class="num hide-sm">Avg</th><th class="num">Points</th></tr>
+      </thead>
+      <tbody>
+        <% @leaderboard.rows.each do |row| %>
+          <tr class="<%= "is-leader" if row.rank == 1 && row.points.positive? %> <%= "is-me" if row.user == current_user %>">
+            <td class="rank"><%= row.points.positive? ? ({ 1 => "🥇", 2 => "🥈", 3 => "🥉" }[row.rank] || row.rank) : "–" %></td>
+            <td>
+              <div class="who">
+                <span class="avatar"><%= row.user.initials %></span>
+                <div>
+                  <div><%= row.user.name %><%= " (you)" if row.user == current_user %></div>
+                  <div class="pergame">
+                    <% Game::ALL.each do |game| %>
+                      <% if (pts = row.by_game[game.key]) %>
+                        <span class="chip" title="<%= game.name %>"><%= game.emoji %> <%= number_with_precision(pts, precision: 1, strip_insignificant_zeros: true) %></span>
+                      <% end %>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="num hide-sm"><%= row.games_played %></td>
+            <td class="num hide-sm"><%= number_with_precision(row.average, precision: 1) %></td>
+            <td class="num total"><%= number_with_precision(row.points, precision: 1, strip_insignificant_zeros: true) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <details class="small" style="margin-top:.75rem">
+    <summary class="muted">How points work</summary>
+    <%= render "shared/scoring" %>
+  </details>
+</div>
+
+<% if @current_month %>
+  <div class="card">
+    <div class="card__head">
+      <h2>Today</h2>
+      <%= link_to "Add my scores", new_result_path(return_to: group_path(@group)), class: "btn btn--primary btn--sm" %>
+    </div>
+    <div class="board-wrap">
+      <table class="board">
+        <tbody>
+          <% @today.rows.each do |row| %>
+            <% results = (@today_results[row.user.id] || []).index_by(&:game) %>
+            <tr class="<%= "is-me" if row.user == current_user %>">
+              <td style="width:30%"><div class="who"><span class="avatar"><%= row.user.initials %></span><%= row.user.name %></div></td>
+              <td>
+                <div class="pergame">
+                  <% Game::ALL.each do |game| %>
+                    <% if (result = results[game.key]) %>
+                      <span class="chip chip--done" title="<%= game.name %>"><%= game.emoji %> <%= result.summary %></span>
+                    <% else %>
+                      <span class="chip chip--missing" title="<%= game.name %> not entered"><%= game.emoji %> –</span>
+                    <% end %>
+                  <% end %>
+                </div>
+              </td>
+              <td class="num total"><%= number_with_precision(row.points, precision: 1, strip_insignificant_zeros: true) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<div class="card" id="invite">
+  <h2>Invite people</h2>
+  <p class="muted small">Anyone with this link can sign up and join <%= @group.name %>.</p>
+  <%= render "invite_link", group: @group %>
+  <div class="spread small" style="margin-top:1rem">
+    <span class="muted"><%= pluralize(@group.members.count, "member") %></span>
+    <% membership = @group.memberships.find_by(user: current_user) %>
+    <%= button_to "Leave group", group_membership_path(@group, membership), method: :delete, class: "linklike linklike--danger", form: { data: { turbo_confirm: "Leave #{@group.name}?" } } %>
+  </div>
+</div>

@@ -1,0 +1,51 @@
+<% content_for :title, "Puzzle Cup" %>
+<div class="spread" style="margin-bottom:1rem">
+  <h1>Hi, <%= current_user.name.split.first %> 👋</h1>
+  <span class="muted"><%= l Date.current, format: "%A, %B %-d" %></span>
+</div>
+
+<div class="card">
+  <div class="card__head">
+    <h2>Today's puzzles</h2>
+    <span class="muted small"><%= @today_results.size %>/<%= Game::ALL.size %> done</span>
+  </div>
+  <div class="games">
+    <% Game::ALL.each do |game| %>
+      <% result = @today_results[game.key] %>
+      <%= link_to(result ? results_path : new_result_path(game: game.key), class: ["game", ("game--done" if result)]) do %>
+        <span class="game__name"><%= game.emoji %> <%= game.name %></span>
+        <span class="small muted"><%= result ? "#{result.summary} · #{number_with_precision(result.points, precision: 1, strip_insignificant_zeros: true)} pts" : "Not entered yet" %></span>
+      <% end %>
+    <% end %>
+  </div>
+  <div style="margin-top:1rem"><%= link_to "Paste today's results", new_result_path, class: "btn btn--primary" %></div>
+</div>
+
+<div class="card">
+  <div class="card__head">
+    <h2>Your groups</h2>
+    <%= link_to "New group", new_group_path, class: "btn btn--sm" %>
+  </div>
+  <% if @groups.empty? %>
+    <p class="muted">You're not in a group yet. Create one and invite your family or coworkers, or open an invite link someone sent you.</p>
+    <%= link_to "Create a group", new_group_path, class: "btn btn--primary" %>
+  <% else %>
+    <div class="stack">
+      <% @groups.each do |group| %>
+        <% board = Leaderboard.for_month(group, Date.current) %>
+        <% me = board.rows.find { |row| row.user == current_user } %>
+        <% prize = group.prize_for(Date.current) %>
+        <%= link_to group_path(group), class: "game", style: "flex-direction:row;justify-content:space-between;align-items:center" do %>
+          <span>
+            <span class="game__name"><%= group.name %></span><br>
+            <span class="small muted">🎁 <%= prize&.description || "No prize set yet" %></span>
+          </span>
+          <span style="text-align:right;white-space:nowrap;flex:none">
+            <strong>#<%= me&.rank %></strong> <span class="small muted">of <%= board.rows.size %></span><br>
+            <span class="small muted"><%= number_with_precision(me&.points || 0, precision: 1, strip_insignificant_zeros: true) %> pts</span>
+          </span>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

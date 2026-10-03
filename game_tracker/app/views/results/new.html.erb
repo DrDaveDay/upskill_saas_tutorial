@@ -1,0 +1,92 @@
+<% content_for :title, "Add scores · Puzzle Cup" %>
+<h1>Add your scores</h1>
+
+<div class="card" data-controller="tabs" data-tabs-start-value="<%= @manual_failed ? 1 : 0 %>">
+  <div class="tabs" role="tablist">
+    <button type="button" class="tab" role="tab" data-tabs-target="tab" data-action="tabs#select" aria-selected="true">📋 Paste results</button>
+    <button type="button" class="tab" role="tab" data-tabs-target="tab" data-action="tabs#select" aria-selected="false">✏️ Enter manually</button>
+  </div>
+
+  <section data-tabs-target="panel">
+    <p class="muted small">
+      In each game, tap <strong>Share</strong> on the results screen, then paste it here. You can paste several games at once.
+    </p>
+    <%= form_with url: results_path, data: { controller: "clipboard" } do |f| %>
+      <%= hidden_field_tag :return_to, params[:return_to] %>
+      <div class="field">
+        <div class="spread" style="margin-bottom:.3rem">
+          <%= f.label :share_text, "Share text", style: "margin:0" %>
+          <button type="button" class="btn btn--sm" data-action="clipboard#paste" data-clipboard-target="button">Paste from clipboard</button>
+        </div>
+        <%= f.text_area :share_text, value: @share_text, required: true, data: { clipboard_target: "source" },
+              placeholder: "Wordle 1,567 3/6\n\n⬛🟨⬛⬛⬛\n🟩🟩⬛🟩⬛\n🟩🟩🟩🟩🟩\n\nConnections\nPuzzle #480\n🟨🟨🟨🟨\n🟩🟩🟩🟩\n🟦🟦🟪🟦\n🟦🟦🟦🟦\n🟪🟪🟪🟪" %>
+      </div>
+      <div class="field field--inline">
+        <div style="flex:0 1 200px"><%= f.label :played_on, "Date played" %><%= f.date_field :played_on, value: @played_on, max: Date.current %></div>
+        <div style="flex:0 0 auto"><%= f.submit "Save scores", class: "btn btn--primary" %></div>
+      </div>
+    <% end %>
+  </section>
+
+  <section data-tabs-target="panel" hidden>
+    <p class="muted small">No share text? Pick a game and enter your result.</p>
+    <%= form_with model: @manual, url: manual_results_path, data: { controller: "manual-entry" } do |f| %>
+      <%= hidden_field_tag :return_to, params[:return_to] %>
+      <div class="field field--inline">
+        <div><%= f.label :game %><%= f.select :game, Game::ALL.map { |g| [ "#{g.emoji} #{g.name}", g.key ] }, {}, data: { action: "manual-entry#switch", manual_entry_target: "game" } %></div>
+        <div><%= f.label :played_on, "Date played" %><%= f.date_field :played_on, max: Date.current %></div>
+      </div>
+
+      <fieldset data-manual-entry-target="fields" data-game="wordle" class="field" style="border:0;padding:0;margin:0 0 1rem">
+        <%= f.label :score_value, "Guesses", for: "wordle_guesses" %>
+        <%= f.select :score_value, (1..6).map { |n| [ "#{n}/6", n ] }, { selected: @manual.score_value || 4 }, id: "wordle_guesses" %>
+        <label class="check" style="margin-top:.5rem"><%= f.check_box :solved, id: "wordle_solved" %> Solved (untick for X/6)</label>
+      </fieldset>
+
+      <fieldset data-manual-entry-target="fields" data-game="waffle" class="field" style="border:0;padding:0;margin:0 0 1rem" hidden>
+        <%= f.label :score_value, "Stars (swaps left)", for: "waffle_stars" %>
+        <%= f.select :score_value, (0..5).map { |n| [ "#{n}★", n ] }, { selected: @manual.score_value || 3 }, id: "waffle_stars" %>
+        <label class="check" style="margin-top:.5rem"><%= f.check_box :solved, id: "waffle_solved" %> Solved (untick if you ran out of swaps)</label>
+      </fieldset>
+
+      <fieldset data-manual-entry-target="fields" data-game="quordle" class="field" style="border:0;padding:0;margin:0 0 1rem" hidden>
+        <label>Guess each word was solved on (leave blank if missed)</label>
+        <div class="field--inline" style="display:flex">
+          <% words = @manual.breakdown.to_s.split(",") %>
+          <% %i[ q1 q2 q3 q4 ].each_with_index do |name, i| %>
+            <%= f.number_field name, in: 1..9, value: words[i].to_s.upcase == "X" ? nil : words[i], aria: { label: "Word #{i + 1}" }, placeholder: "Word #{i + 1}" %>
+          <% end %>
+        </div>
+      </fieldset>
+
+      <fieldset data-manual-entry-target="fields" data-game="connections" class="field" style="border:0;padding:0;margin:0 0 1rem" hidden>
+        <label class="check"><%= f.check_box :solved, id: "connections_solved" %> Solved all four groups</label>
+        <div class="field--inline" style="display:flex;margin-top:.5rem">
+          <div><%= f.label :score_value, "Mistakes (if solved)", for: "connections_mistakes" %><%= f.select :score_value, (0..3).to_a, { selected: @manual.score_value.to_i.clamp(0, 3) }, id: "connections_mistakes" %></div>
+          <div><%= f.label :breakdown, "Groups found (if not)", for: "connections_groups" %><%= f.select :breakdown, (0..3).to_a, {}, id: "connections_groups" %></div>
+        </div>
+      </fieldset>
+
+      <fieldset data-manual-entry-target="fields" data-game="one_word_search" class="field" style="border:0;padding:0;margin:0 0 1rem" hidden>
+        <label class="check"><%= f.check_box :solved, id: "ows_solved" %> Found the word</label>
+        <div class="field--inline" style="display:flex;margin-top:.5rem">
+          <div><%= f.label :minutes, "Minutes" %><%= f.number_field :minutes, min: 0, value: (@manual.score_value.to_i / 60 if @manual.game == "one_word_search") %></div>
+          <div><%= f.label :seconds, "Seconds" %><%= f.number_field :seconds, min: 0, max: 59, value: (@manual.score_value.to_i % 60 if @manual.game == "one_word_search") %></div>
+        </div>
+      </fieldset>
+
+      <%= f.submit "Save score", class: "btn btn--primary" %>
+    <% end %>
+  </section>
+</div>
+
+<div class="card">
+  <h2>Where's the Share button?</h2>
+  <table class="board small">
+    <tbody>
+      <% Game::ALL.each do |game| %>
+        <tr><td><%= link_to "#{game.emoji} #{game.name}", game.url, target: "_blank", rel: "noopener" %></td><td class="muted"><%= game.how_to_share %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

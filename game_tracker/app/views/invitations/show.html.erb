@@ -1,0 +1,17 @@
+<% content_for :title, "Join #{@group.name} · Puzzle Cup" %>
+<div class="form-narrow" style="text-align:center">
+  <div style="font-size:3rem">🏆</div>
+  <h1>Join <%= @group.name %></h1>
+  <p class="muted"><%= pluralize(@group.members.count, "person") %> already competing on Wordle, Waffle, Quordle, Connections and One Word Search.</p>
+  <% if (prize = @group.prize_for(Date.current)) %>
+    <div class="prize" style="text-align:left"><div class="prize__icon">🎁</div><div><div class="prize__label"><%= Date.current.strftime("%B") %> prize</div><div class="prize__text"><%= prize.description %></div></div></div>
+  <% end %>
+  <% if authenticated? %>
+    <%= button_to "Join group", invitation_path(@group.invite_code), class: "btn btn--primary btn--block" %>
+  <% else %>
+    <div class="stack">
+      <%= link_to "Sign up to join", new_registration_path, class: "btn btn--primary btn--block" %>
+      <%= link_to "I already have an account", new_session_path, class: "btn btn--block" %>
+    </div>
+  <% end %>
+</div>

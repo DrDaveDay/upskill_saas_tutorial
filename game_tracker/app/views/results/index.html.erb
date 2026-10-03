@@ -1,0 +1,30 @@
+<% content_for :title, "My scores · Puzzle Cup" %>
+<div class="spread" style="margin-bottom:1rem">
+  <h1>My scores</h1>
+  <%= link_to "Add scores", new_result_path, class: "btn btn--primary btn--sm" %>
+</div>
+
+<% if @results.empty? %>
+  <div class="card"><p class="muted">No scores yet. <%= link_to "Paste your first result", new_result_path %>.</p></div>
+<% else %>
+  <% @results.group_by(&:played_on).each do |date, results| %>
+    <div class="card">
+      <div class="card__head">
+        <h2><%= l date, format: "%A, %B %-d" %></h2>
+        <strong><%= number_with_precision(results.sum(&:points), precision: 1, strip_insignificant_zeros: true) %> pts</strong>
+      </div>
+      <table class="board">
+        <tbody>
+          <% results.each do |result| %>
+            <tr>
+              <td><%= result.game_definition.emoji %> <%= result.game_definition.name %><%= " ##{result.puzzle_number}" if result.puzzle_number %></td>
+              <td><%= result.summary %></td>
+              <td class="num"><%= number_with_precision(result.points, precision: 1, strip_insignificant_zeros: true) %></td>
+              <td class="num"><%= button_to "Delete", result_path(result), method: :delete, class: "linklike linklike--danger small", form: { data: { turbo_confirm: "Delete this score?" } } %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+<% end %>
